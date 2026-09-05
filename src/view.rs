@@ -9,6 +9,24 @@ impl eframe::App for IaGuiApp {
             ui.heading("📦 Better-IA: Internet Archive Explorer");
             ui.add_space(10.0);
 
+            let history_snapshot = self.search_history.clone();
+
+            if !history_snapshot.is_empty() {
+                ui.horizontal(|ui| {
+                    ui.label("Recent Searches:");
+                    egui::ComboBox::from_id_salt("history_box")
+                        .selected_text(&self.search_input)
+                        .show_ui(ui, |ui| {
+                            for historic_item in &history_snapshot {
+                                if ui.selectable_value(&mut self.search_input, historic_item.clone(), historic_item).clicked() {
+                                    self.execute_search(ctx);
+                                }
+                            }
+                        });
+                });
+                ui.add_space(5.0);
+            }
+
             ui.horizontal(|ui| {
                 ui.label("Search Catalog:");
                 let text_res = ui.text_edit_singleline(&mut self.search_input);
@@ -45,16 +63,34 @@ impl eframe::App for IaGuiApp {
             ui.label(format!("Status: {}", self.status_text));
             ui.add_space(5.0);
 
-            // NATIVE VISUAL PROGRESS BAR ARCHITECTURE ROW
+            // FIXED ROW: Allocates proportional widths so elements do not push off-screen
             if self.total_download_files > 0 {
                 let progress_fraction = self.completed_download_files as f32 / self.total_download_files as f32;
-                let bar_text = format!("{}% ({}/{})", (progress_fraction * 100.0) as usize, self.completed_download_files, self.total_download_files);
-                
-                ui.add(
-                    egui::ProgressBar::new(progress_fraction)
-                        .text(bar_text)
-                        .animate(self.completed_download_files < self.total_download_files)
+                let bar_text = format!(
+                    "{}% ({}/{}) - {:.2} MB/s", 
+                    (progress_fraction * 100.0) as usize, 
+                    self.completed_download_files, 
+                    self.total_download_files,
+                    self.current_speed_mbps
                 );
+                
+                ui.horizontal(|ui| {
+                    // FIX: Constrain progress bar width to 75% of the panel so buttons remain visible
+                    let desired_width = ui.available_width() * 0.75;
+                    
+                    ui.add_sized(
+                        [desired_width, 20.0],
+                        egui::ProgressBar::new(progress_fraction)
+                            .text(bar_text)
+                            .animate(self.completed_download_files < self.total_download_files)
+                    );
+                    
+                    if self.completed_download_files < self.total_download_files {
+                        if ui.button("🛑 Cancel").clicked() {
+                            self.abort_download();
+                        }
+                    }
+                });
                 ui.add_space(5.0);
             }
 

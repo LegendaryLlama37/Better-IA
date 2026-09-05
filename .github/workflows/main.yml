@@ -1,0 +1,69 @@
+name: Build and Release Better-IA
+
+on:
+  push:
+    tags:
+      - 'v*' # Triggers the build whenever you push a version tag like v1.0.0
+
+permissions:
+  contents: write # Crucial permission allowing the runner to upload artifacts to GitHub Releases
+
+jobs:
+  build-and-release:
+    name: Build for ${{ matrix.job.os }}
+    runs-on: ${{ matrix.job.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        job:
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+            artifact_name: better_ia_linux
+            use_shell: bash
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+            artifact_name: better_ia_windows.exe
+            use_shell: pwsh
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      # Linux requires specific graphics libraries installed on the headless runner to compile egui/eframe
+      - name: Install Linux System Dependencies
+        if: matrix.job.os == 'ubuntu-latest'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwayland-dev libx11-dev libx11-xcb-dev libxkbcommon-dev libxinerama-dev libxcursor-dev libxi-dev libgl1-mesa-dev libxrandr-dev libdbus-1-dev
+
+      - name: Set Up Rust Toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.job.target }}
+
+      # Speeds up future workflow builds drastically by caching compiled dependencies
+      - name: Rust Cache
+        uses: Swatinem/rust-cache@v2
+
+      - name: Compile Standalone Release Binary
+        shell: ${{ matrix.job.use_shell }}
+        run: |
+          cargo build --release --target ${{ matrix.job.target }}
+
+      # Locates the binary and renames it cleanly for distribution
+      - name: Prepare Artifact
+        shell: ${{ matrix.job.use_shell }}
+        run: |
+          if ("${{ matrix.job.os }}" -eq "windows-latest") {
+            Copy-Item "target/${{ matrix.job.target }}/release/Better-IA.exe" "${{ matrix.job.artifact_name }}"
+          } else {
+            copy "target/${{ matrix.job.target }}/release/Better-IA" "${{ matrix.job.artifact_name }}"
+            chmod +x "${{ matrix.job.artifact_name }}"
+          }
+
+      - name: Generate and Upload Release Assets
+        uses: softprops/action-gh-release@v2
+        with:
+          files: ${{ matrix.job.artifact_name }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

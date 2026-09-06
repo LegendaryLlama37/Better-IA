@@ -42,9 +42,11 @@ jobs:
         with:
           targets: ${{ matrix.target }}
 
-      # Speeds up future workflow builds drastically by caching compiled dependencies
+      # FIX: Added a dedicated prefix key to break stale cached crate indexes on the runners
       - name: Rust Cache
         uses: Swatinem/rust-cache@v2
+        with:
+          key: cache-all-with-v1
 
       - name: Compile Standalone Release Binary
         run: |

@@ -18,46 +18,48 @@ A fast, native cross-platform desktop client for searching the Internet Archive 
 
 ---
 
-## Installation & Compilation
+## Installation & Download
+
+### Pre-compiled Binaries (Recommended)
+You do not need to compile this software from source. Ready-to-run desktop applications for both Windows and Linux are automatically built and published for every release.
+
+1. Navigate to the Releases section on the right side of this GitHub repository page.
+2. Download the version corresponding to your operating system:
+   * For Windows: Download `better_ia_windows.exe` (Run the standalone executable directly).
+   * For Linux: Download `better_ia_linux` (Mark as executable via `chmod +x better_ia_linux` and launch).
+
+---
+
+## Building from Source (Developers Only)
+
+If you wish to modify the codebase or build the binary manually, follow the development compilation steps below.
 
 ### Prerequisites
 Ensure you have the latest stable Rust toolchain installed. If not, get it from [rustup.rs](https://rustup.rs).
 
-#### Linux Dependencies
-If you are compiling on Linux, ensure your system has the standard development graphics headers installed:
+#### Linux System Dependencies
+Compiling the hardware-accelerated GUI graphics stack natively on Linux requires standard development graphics headers:
 ```bash
 # On Ubuntu/Debian/Pop!_OS:
 sudo apt-get update
 sudo apt-get install -y libwayland-dev libx11-dev libx11-xcb-dev libxkbcommon-dev libxinerama-dev libxcursor-dev libxi-dev libgl1-mesa-dev libxrandr-dev libdbus-1-dev
 ```
 
-### Building the Project
-Clone the repository and compile the optimized standalone binary executable:
+### Compiling Natively
+Clone the repository and build the optimized standalone production release binary:
 
 ```bash
 git clone https://github.com
 cd Better-IA
 cargo run --release
 ```
-The compiled binary executable can be extracted directly from `target/release/`.
+The newly generated executable can be extracted directly from `target/release/`.
 
 ---
 
-## Cross-Platform Distribution
+## Cross-Platform Design
 
 This binary is safe to distribute standalone. It bundles its own secure TLS cryptography engines and root certificates (`webpki-roots`) and relies on an internal standalone DNS resolver (`hickory-dns`), making it completely independent of underlying host system network configurations.
-
-### Cross-Compiling for Windows from Linux
-If you want to build the Windows standalone `.exe` without leaving your Linux terminal:
-```bash
-# 1. Install the Windows compiler tools
-sudo apt-get install mingw-w64
-rustup target add x86_64-pc-windows-gnu
-
-# 2. Build the Windows binary
-cargo build --release --target x86_64-pc-windows-gnu
-```
-Your executable will be waiting at `target/x86_64-pc-windows-gnu/release/Better-IA.exe`.
 
 ---
 
@@ -70,4 +72,3 @@ This project is licensed under the MIT License. See the LICENSE file for details
 ## Contributing
 
 Contributions, bug tracking issues, and feature additions are welcome. Feel free to fork the repository, open a pull request, or submit an issue tracker ticket.
-

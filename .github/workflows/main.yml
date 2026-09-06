@@ -6,33 +6,17 @@ on:
       - 'v*' # Triggers the build whenever you push a version tag like v1.0.0
 
 permissions:
-  contents: write # Crucial permission allowing the runner to upload artifacts to GitHub Releases
+  contents: write # Allows the runners to attach binary outputs directly to your release tag
 
 jobs:
-  build-and-release:
-    name: Build for Linux and Windows
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - os: ubuntu-latest
-            target: x86_64-unknown-linux-gnu
-            artifact_name: better_ia_linux
-            binary_src: target/release/better_ia
-          - os: windows-latest
-            target: x86_64-pc-windows-msvc
-            artifact_name: better_ia_windows.exe
-            binary_src: target\release\better_ia.exe
-
-    runs-on: ${{ matrix.os }}
-
+  build-linux:
+    name: Build Linux Binary
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      # Linux requires specific graphics libraries installed on the headless runner to compile egui/eframe
       - name: Install Linux System Dependencies
-        if: matrix.os == 'ubuntu-latest'
         run: |
           sudo apt-get update
           sudo apt-get install -y libwayland-dev libx11-dev libx11-xcb-dev libxkbcommon-dev libxinerama-dev libxcursor-dev libxi-dev libgl1-mesa-dev libxrandr-dev libdbus-1-dev
@@ -40,36 +24,52 @@ jobs:
       - name: Set Up Rust Toolchain
         uses: dtolnay/rust-toolchain@stable
         with:
-          targets: ${{ matrix.target }}
+          targets: x86_64-unknown-linux-gnu
 
-      # FIX: Added a dedicated prefix key to break stale cached crate indexes on the runners
-      - name: Rust Cache
-        uses: Swatinem/rust-cache@v2
-        with:
-          key: cache-all-with-v1
+      # ABSOLUTE FIX: Stripped caching steps to clear bad registry locks entirely
 
       - name: Compile Standalone Release Binary
-        run: |
-          cargo build --release
+        run: cargo build --release
 
-      # Locates the binary and renames it cleanly for distribution using shell agnostic operations
-      - name: Prepare Artifact (Windows)
-        if: matrix.os == 'windows-latest'
+      - name: Prepare Artifact
         run: |
-          copy ${{ matrix.binary_src }} ${{ matrix.artifact_name }}
-        shell: cmd
+          cp target/release/better_ia better_ia_linux
+          chmod +x better_ia_linux
 
-      - name: Prepare Artifact (Linux)
-        if: matrix.os == 'ubuntu-latest'
-        run: |
-          cp ${{ matrix.binary_src }} ${{ matrix.artifact_name }}
-          chmod +x ${{ matrix.artifact_name }}
-
-      # Generates release artifacts correctly by appending parallel stream files together
-      - name: Generate and Upload Release Assets
+      - name: Upload Release Assets
         uses: softprops/action-gh-release@v2
         with:
-          files: ${{ matrix.artifact_name }}
+          files: better_ia_linux
+          append_body: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  build-windows:
+    name: Build Windows Executable
+    runs-on: windows-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set Up Rust Toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-pc-windows-msvc
+
+      # ABSOLUTE FIX: Isolated clean fetch forces a fresh checkout download of tokio-util, futures-util, and rfd
+
+      - name: Compile Standalone Release Binary
+        run: cargo build --release
+
+      - name: Prepare Artifact
+        run: |
+          copy target\release\better_ia.exe better_ia_windows.exe
+        shell: cmd
+
+      - name: Upload Release Assets
+        uses: softprops/action-gh-release@v2
+        with:
+          files: better_ia_windows.exe
           append_body: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

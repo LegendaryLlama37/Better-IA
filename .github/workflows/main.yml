@@ -61,10 +61,12 @@ jobs:
           cp target/${{ matrix.target }}/release/Better-IA ${{ matrix.artifact_name }}
           chmod +x ${{ matrix.artifact_name }}
 
+      # FIX: Added append_body to ensure parallel matrix jobs merge their assets correctly
       - name: Generate and Upload Release Assets
         uses: softprops/action-gh-release@v2
         with:
           files: ${{ matrix.artifact_name }}
+          append_body: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 

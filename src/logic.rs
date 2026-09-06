@@ -6,7 +6,7 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 use std::time::{Duration, Instant};
 use tokio::task::JoinSet;
 use tokio_util::sync::CancellationToken;
-use futures_util::StreamExt;
+use futures_util::stream::StreamExt;
 use crate::types::{IaGuiApp, SearchFilter, AppMessage, IaSearchResponse, IaItem};
 
 impl IaGuiApp {

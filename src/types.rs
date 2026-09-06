@@ -1,7 +1,6 @@
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
 use std::path::PathBuf;
 use std::sync::mpsc::{Receiver, Sender};
-use std::sync::Arc;
 use tokio_util::sync::CancellationToken;
 
 #[derive(Deserialize, Debug, Clone)]

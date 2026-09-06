@@ -18,9 +18,11 @@ jobs:
           - os: ubuntu-latest
             target: x86_64-unknown-linux-gnu
             artifact_name: better_ia_linux
+            binary_src: target/release/better_ia
           - os: windows-latest
             target: x86_64-pc-windows-msvc
             artifact_name: better_ia_windows.exe
+            binary_src: target\release\better_ia.exe
 
     runs-on: ${{ matrix.os }}
 
@@ -46,22 +48,22 @@ jobs:
 
       - name: Compile Standalone Release Binary
         run: |
-          cargo build --release --target ${{ matrix.target }}
+          cargo build --release
 
       # Locates the binary and renames it cleanly for distribution using shell agnostic operations
       - name: Prepare Artifact (Windows)
         if: matrix.os == 'windows-latest'
         run: |
-          copy target\${{ matrix.target }}\release\Better-IA.exe ${{ matrix.artifact_name }}
+          copy ${{ matrix.binary_src }} ${{ matrix.artifact_name }}
         shell: cmd
 
       - name: Prepare Artifact (Linux)
         if: matrix.os == 'ubuntu-latest'
         run: |
-          cp target/${{ matrix.target }}/release/Better-IA ${{ matrix.artifact_name }}
+          cp ${{ matrix.binary_src }} ${{ matrix.artifact_name }}
           chmod +x ${{ matrix.artifact_name }}
 
-      # FIX: Added append_body to ensure parallel matrix jobs merge their assets correctly
+      # Generates release artifacts correctly by appending parallel stream files together
       - name: Generate and Upload Release Assets
         uses: softprops/action-gh-release@v2
         with:
@@ -69,4 +71,3 @@ jobs:
           append_body: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-

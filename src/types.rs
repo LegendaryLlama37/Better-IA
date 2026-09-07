@@ -18,12 +18,15 @@ pub struct IaItem {
     pub identifier: String,
     pub title: Option<String>,
     pub mediatype: Option<String>,
+    pub item_size: Option<u64>, // Captures the exact collection payload byte metric from IA
 }
 
 #[derive(PartialEq, Clone, Copy, Debug)]
 pub enum SearchFilter {
     All,
-    Collection,
+    TvShow,
+    MusicAlbum,
+    BookSeries,
     SingleFile,
 }
 
@@ -38,6 +41,7 @@ pub enum AppMessage {
 
 pub struct IaGuiApp {
     pub(crate) search_input: String,
+    pub(crate) local_filter_input: String, // NEW: Tracks instant local list queries
     pub(crate) filter: SearchFilter,
     pub(crate) download_directory: PathBuf,
     pub(crate) status_text: String,
@@ -45,7 +49,7 @@ pub struct IaGuiApp {
     pub(crate) results: Vec<IaItem>,
     pub(crate) tx: Sender<AppMessage>,
     pub(crate) rx: Receiver<AppMessage>,
-    
+
     // Advanced features state variables
     pub(crate) total_download_files: usize,
     pub(crate) completed_download_files: usize,
@@ -56,4 +60,3 @@ pub struct IaGuiApp {
     pub(crate) current_speed_mbps: f64,
     pub(crate) search_history: Vec<String>,
 }
-
